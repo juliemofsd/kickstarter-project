@@ -10,21 +10,21 @@
 #summary(df$goal)
 
 # variables of interest:
-# backers_count
-# category
-# converted_pledged_amount
-# country
-# created_at?
-# deadline?
-# goal
-# is_backing 
-# pledged
-# state (live, successful, failed)
-# staff_pick
-# spotlight
+#backers_count
+#category
+#converted_pledged_amount
+#country
+#created_at?
+#deadline?
+#goal
+#is_backing 
+#pledged
+#state (live, successful, failed)
+#staff_pick
+#spotlight
 
 # questions for the team
-# Would you recommend rescaling? If so, what approach?
-# What is the created_at variable?
-# How do we interpret the deadline variable?
-# Do we preprocess the data together before we start independently evaluating it?
+#Would you recommend rescaling? If so, what approach?
+#What is the created_at variable?
+#How do we interpret the deadline variable?
+#Do we preprocess the data together before we start independently evaluating it?
