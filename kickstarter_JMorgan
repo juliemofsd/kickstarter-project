@@ -1,6 +1,7 @@
 ###############################
 ####KICKSTARTER EXPLORATION####
 ###############################
+library(tseries) #loads "tseries" library - need to first install "tseries" package
 
 #IMPORT DATASET
 df<-read.csv('https://raw.githubusercontent.com/juliemofsd/kickstarter-project/main/Kickstarter_JMorgan.csv')
@@ -18,5 +19,19 @@ kickstarter_1<-df  ##create new dataset from starting point
 kickstarter_1$State[kickstarter_1$State>1]<-NA ##assigns NA values for invalid responses
 dim(kickstarter_1)
 
-kickstarter_2<-subset(kickstarter_1, State<1) ##deletes observations with invalid or failed State response
+kickstarter_2<-subset(kickstarter_1, State<1) ##deletes observations with invalid State response
 dim(kickstarter_2)
+
+##DATA VISUALIZATIONS
+hist(kickstarter_2$pledged, prob = TRUE) #generates a histogram for the pledged variable
+curve(dnorm(x, mean = mean(kickstarter_2$pledged), sd = sd(kickstarter_2$pledged)), col = "darkblue", lwd = 2, add = TRUE) #added calibrated normal density curve to histogram
+plot(density(kickstarter_2$pledged)) #generated a nonparametric density estimate of the distribution of the Sales variable
+pairs(kickstarter_2[,2:10]) #generate pairs of scatter plots from the variables in columns 2-10
+plot(kickstarter_2$pledged~kickstarter_2$campaign_length) 
+
+##BUILD A UNIVARIATE REGRESSION MODEL TO LOOK AT THE EFFECT OF THE NUMBER OF BACKERS ON AMOUNT PLEDGED##
+M1<-lm(pledged~backers_count, kickstarter_2)  #builds the model: pledged = B_0+B_1(backers_count)+e
+summary(M1)  #returns summary output from the model M1
+
+
+#QUESTION: IF WE CONTROL FOR CAMPAIGN LENGTH (campaign_length), DO MORE BACKERS EQUAL A GREATER CHANCE OF SUCCESS?
