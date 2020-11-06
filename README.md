@@ -1,6 +1,6 @@
 # kickstarter-project
 # Questions:
--- How much can we expect the USD pledge considering the variables?
+-- How much can we expect the USD pledge considering the variables? <br>
 -- What's the probability that we would reach our goal considering these variables (0, 1)?
 
 #Data
