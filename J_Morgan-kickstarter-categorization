@@ -1,0 +1,48 @@
+###############################
+##KICKSTARTER CATEGORIZATION###
+###############################
+#LOAD LIBRARIES#
+library(caret) #data partitioning library and other machine learning tools
+library(rpart) #CART library
+library(e1071) #svm library
+library(randomForest) #random forest
+
+#IMPORT DATASET
+df<-read.csv('https://raw.githubusercontent.com/CallBark/kickstarter/main/Kickstarter_NA.csv', header = T)
+df$State<-factor(df$State) #convert State to factor (categorical) variable
+
+##DESCRIPTIVE SUMMARY STATISTICS##
+View(df)
+dim(df)
+
+#####################
+##PARTITIONING DATA##
+#####################
+
+set.seed(123) #locks seed for random partitioning
+#creates a vector of rows to randomly sample from the raw data
+inTrain <- createDataPartition(y=df$State, p=.70, list = FALSE)
+
+#stores these rows in the training set
+Training<-df[inTrain,]
+
+#stores all rows not in the training set in the test/validation set
+Testing<-df[-inTrain,]
+
+
+#####################
+####RANDOM FOREST####
+#####################
+
+#caret package implementation with 10-fold cross validation
+set.seed(123)
+train_control <- trainControl(method="cv", number=10, savePredictions = TRUE)
+RF1 <- train(State ~ ., method="rf", trControl=train_control, preProcess=c("center", "scale"), tuneLength=2, data=Training)
+print(RF1)
+confusionMatrix(predict(RF1, Testing), Testing$State, positive='1')
+
+#random forest package implementation
+set.seed(123)
+RF2 <- randomForest(State ~., Training)
+print(RF2)
+confusionMatrix(predict(RF2, Testing), Testing$State, positive='1')
