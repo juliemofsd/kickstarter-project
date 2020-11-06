@@ -1,0 +1,140 @@
+###############################
+####KICKSTARTER EXPLORATION####
+###############################
+
+#IMPORT DATASET
+df<-read.csv('https://raw.githubusercontent.com/CallBark/kickstarter/main/Kickstarter_NA.csv', header = T)
+
+##DESCRIPTIVE SUMMARY STATISTICS##
+View(df)
+dim(df)
+summary(df) #generates the "six number summary" statistics for each variable
+cov(df[,3:8]) #generates the variance-covariance matrix from column variables 3-8
+cor(df[,3:8]) #generates the correlation matrix for column variables 3-8
+
+##DATA VISUALIZATIONS
+hist(df$USD.Pledged, prob = TRUE) #generates a histogram for the USD.Pledged variable
+curve(dnorm(x, mean = mean(df$USD.Pledged), sd = sd(df$USD.Pledged)), col = "darkblue", lwd = 2, add = TRUE) #add calibrated normal density curve to histogram
+plot(density(df$USD.Pledged)) #generates a nonparametric density estimate of the distribution of the usd_pledged variable
+hist(df$Goal, prob = TRUE) #generates a histogram for the Goal variable
+curve(dnorm(x, mean = mean(df$Goal), sd = sd(df$Goal)), col = "darkblue", lwd = 2, add = TRUE) #add calibrated normal density curve to histogram
+pairs(df[,3:8]) #generate pairs of scatter plots from the variables in columns 3-8
+plot(df$USD.Pledged~df$Blurb.Length) #generate scatter plot of USD.Pledged(X) vs. Blurb.length(Y)
+plot(df$USD.Pledged~df$Backers.Count) #generate scatter plot of USD.Pledged(X) vs. Backers.Count(Y)
+plot(df$USD.Pledged~df$Campaign.Length) #generate scatter plot of USD.Pledged(X) vs. Campaign.Length(Y)
+plot(df$USD.Pledged~df$Decision.Timing) #generate scatter plot of USD.Pledged(X) vs. Decision.Timing(Y)
+plot(df$USD.Pledged~df$Goal) #generate scatter plot of USD.Pledged(X) vs. Goal(Y)
+plot(df$USD.Pledged~df$Spotlight) #generate scatter plot of USD.Pledged(X) vs. Spotlight(Y)
+plot(df$USD.Pledged~df$Staff.Pick) #generate scatter plot of USD.Pledged(X) vs. Staff.Pick(Y)
+
+##BUILDING A LINEAR MODEL TO QUANTIFY THE RELATIONSHIP BETWEEN USD PLEDGED AND NUMBER OF BACKERS##
+M1<-lm(USD.Pledged~Backers.Count, df)  #model: USD Pledged = B_0+B_1(backers_count)+e
+
+##MODEL DIAGNOSTICS##
+summary(M1) #produces the summary output of the model
+confint(M1) #returns upper and lower bounds from the 95% confidence interval for each model parameter
+
+##VISUALIZING OUR RESULTS##
+plot(df$USD.Pledged~df$Backers.Count) #scatter plot of USD Pledged vs. Backers.Count again
+abline(M1$coefficients[1], M1$coefficients[2], col='blue', lwd=2) #add regression line to plot
+
+##PLOTTING FITTED (PREDICTED) VALUES
+plot(M1$fitted.values~df$Backers.Count)
+abline(M1$coefficients[1], M1$coefficients[2], col='blue', lwd=2) #add regression line to plot
+
+##RESIDUAL ANALYSIS##
+plot(M1$residuals)
+abline(0,0,col='black')
+hist(M1$residuals)
+summary(M1$residuals)
+curve(dnorm(x, mean = mean(M1$residuals), sd = sd(M1$residuals)), col = "darkblue", lwd = 2, add = TRUE) #add calibrated normal density curve to histogram
+
+##QUESTION: HOW MUCH CAN WE EXPECT THE USD PLEDGE TO BE CONSIDERING THE VARIABLES?##
+
+##EXPLORING UNIVARIATE REGRESSION MODELS##
+M2<-lm(USD.Pledged~Blurb.Length, df)  #builds the model: USD.Pledged = B_0+B_1(Blurb.length)+e
+summary(M2)  #returns summary output from the model M2
+
+M3<-lm(USD.Pledged~Blurb.Caps, df)  #builds the model: USD.Pledged = B_0+B_1(Blurb.caps)+e
+summary(M3)  #returns summary output from the model M3
+
+M4<-lm(USD.Pledged~Name.Length, df)  #builds the model: USD.Pledged = B_0+B_1(Name.Length)+e
+summary(M4)  #returns summary output from the model M4
+
+M5<-lm(USD.Pledged~Spotlight, df)  #builds the model: USD.Pledged = B_0+B_1(spotlight)+e
+summary(M5)  #returns summary output from the model M5
+
+M6<-lm(USD.Pledged~Staff.Pick, df)  #builds the model: USD.Pledged = B_0+B_1(staff_pick)+e
+summary(M6)  #returns summary output from the model M6
+
+M7<-lm(USD.Pledged~Goal, df)  #builds the model: USD.Pledged = B_0+B_1(goal)+e
+summary(M7)  #returns summary output from the model M7
+
+##EXPLORING MULTIVARIATE REGRESSION MODELS##
+#QUESTION: WILL CONTROLLING FOR CAMPAIGN LENGTH, SPOTLIGHT AND STAFF PICK INFLUENCE THE AMOUNT OF USD PLEDGED?
+##BUILD A MULTIVARIATE MODEL TO PREDICT USD PLEDGED CONTROLLING FOR BOTH SPOTLIGHT AND STAFF PICK##
+M8<-lm(USD.Pledged~Spotlight+Staff.Pick, df) #model: USD.Pledged = B_0+B_1(spotlight)+B_2(staff_pick)+e
+summary(M8)  #returns summary output for model M8
+cbind( M8$coefficients, confint(M8)) #binds the point estimates and a interval in a table
+
+##SOME RESIDUAL ANALYSIS##
+plot(M8$residuals) #plots residuals
+abline(0,0,col='black', lwd = 4) #adds a straight line across X-axis
+
+hist(M8$residuals, prob = TRUE) #plots histogram of residuals
+#adds calibrated normal curve to residual histogram
+curve(dnorm(x, mean = mean(M8$residuals), sd = sd(M8$residuals)), col = "darkblue", lwd = 2, add=TRUE)
+summary(M8$residuals) #summary descriptive stats for residuals
+
+library(tseries) #loads "tseries" library - need to first install "tseries" package
+#conducts a hypothesis test for normality called the Jarque-Bera test
+jarque.bera.test(M8$residuals) #null hypothesis: data is distribution is normal
+
+
+##BUILD MODEL CAPTURING KICKSTARTER SUCCESS IN ADDITION TO SPOTLIGHT##
+
+##########################################
+##SEGMENTING SUCCESSFUL PARTITIONS##
+##########################################
+
+Failed<-subset(df, df$State==!1) 
+Success<-subset(df, df$State==1) 
+
+#CHECK DIMENSIONS OF DATA PARTITION
+dim(Failed)
+dim(Success)
+View(Failed)
+View(Success)
+
+#REBUILD MODEL 8 WITH ONLY SUCCESSFUL KICKSTARTER DATA
+M9<-lm(USD.Pledged~Spotlight+Staff.Pick, Success) #model: USD.Pledged = B_0+B_1(spotlight)+B_2(staff_pick)+e
+summary(M9)
+
+M10<-lm(USD.Pledged~Spotlight+Staff.Pick, Failed) #model: USD.Pledged = B_0+B_1(spotlight)+B_2(staff_pick)+e
+summary(M10)
+
+#############################
+####PARTITIONING THE DATA####
+#############################
+
+#fraction of sample to be used for training
+p<-.7
+
+#number of observations (rows) in the dataframe
+obs_count<-dim(df)
+
+#number of observations to be selected for the training partition
+#the floor() function rounds down to the nearest integer
+training_size <- floor(p * obs_count)
+training_size
+#set the seed to make your partition reproducible
+set.seed(123)
+#create a vector with the shuffled row numbers of the original dataset
+train_ind <- sample(obs_count, size = training_size)
+
+Training <- df[train_ind, ] #pulls random rows for training
+Testing <- df[-train_ind, ] #pulls random rows for testing
+
+dim(Training)
+dim(Testing)
+
