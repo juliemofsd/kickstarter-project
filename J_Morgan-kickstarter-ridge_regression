@@ -4,31 +4,17 @@
 
 #IMPORT DATASET
 df<-read.csv('https://raw.githubusercontent.com/CallBark/kickstarter/main/Kickstarter_NA.csv', header = T)
+Testing<-read.csv('https://raw.githubusercontent.com/Dereklip/GSBA576/main/Testing_v2.csv', header = T)
+Training<-read.csv('https://raw.githubusercontent.com/Dereklip/GSBA576/main/Training_v2.csv', header = T)
+Validation<-read.csv('https://raw.githubusercontent.com/Dereklip/GSBA576/main/Validation_v2.csv', header = T)
 
 ##DESCRIPTIVE SUMMARY STATISTICS##
 View(df)
 dim(df)
 summary(df) #generates the "six number summary" statistics for each variable
-
-############################
-#####PARTITIONING DATA######
-###WITH THE CARET PACKAGE###
-############################
-install.packages('caret') #installs the caret package
-library(caret)  #calls the caret library to use createDataPartition()
-
-
-##Training / testing sets will be updated
-set.seed(123) #locks seed for random partitioning
-inTrain <- createDataPartition(y=df$USD.Pledged, p=.70, list = FALSE) ##creates a vector of rows to randomly sample p=70% from the raw data for training
-Training<-df[inTrain,] ##stores these rows in the training set
-Testing<-df[-inTrain,] ##stores all rows not in the training set in the test/validation set
-
-dim(Training)
 dim(Testing)
-View(Training)
-View(Testing)
-
+dim(Training)
+dim(Validation)
 
 ##DATA VISUALIZATIONS
 hist(df$USD.Pledged, prob = TRUE) #generates a histogram for the USD.Pledged variable
@@ -37,13 +23,6 @@ plot(density(df$USD.Pledged)) #generates a nonparametric density estimate of the
 hist(df$Goal, prob = TRUE) #generates a histogram for the Goal variable
 curve(dnorm(x, mean = mean(df$Goal), sd = sd(df$Goal)), col = "darkblue", lwd = 2, add = TRUE) #add calibrated normal density curve to histogram
 pairs(df[,3:8]) #generate pairs of scatter plots from the variables in columns 3-8
-plot(df$USD.Pledged~df$Blurb.Length) #generate scatter plot of USD.Pledged(X) vs. Blurb.length(Y)
-plot(df$USD.Pledged~df$Backers.Count) #generate scatter plot of USD.Pledged(X) vs. Backers.Count(Y)
-plot(df$USD.Pledged~df$Campaign.Length) #generate scatter plot of USD.Pledged(X) vs. Campaign.Length(Y)
-plot(df$USD.Pledged~df$Decision.Timing) #generate scatter plot of USD.Pledged(X) vs. Decision.Timing(Y)
-plot(df$USD.Pledged~df$Goal) #generate scatter plot of USD.Pledged(X) vs. Goal(Y)
-plot(df$USD.Pledged~df$Spotlight) #generate scatter plot of USD.Pledged(X) vs. Spotlight(Y)
-plot(df$USD.Pledged~df$Staff.Pick) #generate scatter plot of USD.Pledged(X) vs. Staff.Pick(Y)
 
 ##BUILDING A LINEAR MODEL TO QUANTIFY THE RELATIONSHIP BETWEEN USD PLEDGED AND NUMBER OF BACKERS##
 M1<-lm(USD.Pledged~Backers.Count, df)  #model: USD Pledged = B_0+B_1(backers_count)+e
@@ -88,7 +67,7 @@ summary(M7)  #returns summary output from the model M7
 ##EXPLORING MULTIVARIATE REGRESSION MODELS##
 #QUESTION: WILL CONTROLLING FOR SPOTLIGHT AND STAFF PICK INFLUENCE THE AMOUNT OF USD PLEDGED?
 ##BUILD A MULTIVARIATE MODEL TO PREDICT USD PLEDGED CONTROLLING FOR BOTH SPOTLIGHT AND STAFF PICK##
-M8<-lm(USD.Pledged~Backers.Count+Spotlight+Staff.Pick, df) #model: USD.Pledged = B_0+B_1(Backers.Count)+B_2(Spotlight)+B_2(staff_pick)+e
+M8<-lm(USD.Pledged~Blurb.Length+Blurb.Caps+Name.Length+Backers.Count+Spotlight+Staff.Pick+Goal, df) #model: USD.Pledged = B_0+B_1(Backers.Count)+B_2(Spotlight)+B_2(staff_pick)+e
 summary(M8)
 cbind( M8$coefficients, confint(M8))
 
@@ -101,7 +80,7 @@ summary(M8$residuals)
 
 
 #BUILD MODEL M8 WITH ONLY THE TRAINING DATA PARTITION
-M9<-lm(USD.Pledged~Backers.Count+Spotlight+Staff.Pick, Training) #model: USD.Pledged = B_0+B_1(Backers.Count)+B_2(Spotlight)+B_2(staff_pick)+e
+M9<-lm(USD.Pledged~Blurb.Length+Blurb.Caps+Name.Length+Backers.Count+Spotlight+Staff.Pick+Goal, Training) #model: USD.Pledged = B_0+B_1(Backers.Count)+B_2(Spotlight)+B_2(staff_pick)+e
 summary(M9)
 
 
@@ -117,7 +96,9 @@ select(lm.ridge(y ~ ., Training,
 
 
 ##CALCULATE ROOT MEAN SQUARE PREDICTION ERROR ON TEST DATA: THE IN-SAMPLE ERROR MEASURE
-RMSE_IN<-sqrt(sum((M9$fitted.values-Training$USD.Pledged)^2)/length(Training$USD.Pledged))
+install.packages('caret') #installs the caret package
+library(caret)  #calls the caret library to use createDataPartition()
+RMSE_IN<-sqrt(sum((M9$fitted.values-Testing$USD.Pledged)^2)/length(Testing$USD.Pledged))
 RMSE_IN #report root mean squared error (E_out) using the out-of-sample testing data
 
 #EVALUATE M9 ON THE TEST PARTITION TO COMPUTE THE OUT-OF-SAMPLE PREDICTIONS
